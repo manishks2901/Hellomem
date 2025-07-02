@@ -9,6 +9,7 @@ import axios from "axios";
 import Config from "../../config";
 import Products from "./Products";
 import BottomNav from "../components/layout/BottomNav";
+import MobileProductList from "../components/layout/MobileProductView";
 const Home: React.FC = () => {
   const { state, dispatch } = useApp();
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -17,6 +18,7 @@ const Home: React.FC = () => {
   const [popularCategories, setPopularCategories] = useState([]);
   const [banner, setBanner] = useState([]);
   const [fetchData, setFetchData] = useState([]);
+  const isMobile = window.innerWidth < 768;
   useEffect(() => {
     const fetchBanners = async () => {
       try {
@@ -29,11 +31,11 @@ const Home: React.FC = () => {
           }
         );
 
-        // If the response is a JSON string, parse it
+
         const parsed = response.data;
         setFetchData(JSON.parse(parsed.data));
 
-        // TODO: setBanners(parsed); // ← If you’re storing in state
+
       } catch (error) {
         console.error("Error fetching or parsing banners:", error);
       }
@@ -231,7 +233,9 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section> */}
-      <Products />
+      {
+        isMobile ? <MobileProductList/> : <Products/>
+      }
       {/* New Arrivals */}
 
       {recentProducts.length > 0 && (
@@ -293,7 +297,6 @@ const Home: React.FC = () => {
           </motion.div>
         </div>
       </section>
-      <BottomNav/>
     </div>
   );
 };
