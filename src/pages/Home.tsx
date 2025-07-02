@@ -119,15 +119,17 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
        <section className="py-12 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            {window.innerWidth >= 768 && (
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
               Popular Categories
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Explore our most popular categories and find exactly what you're
               looking for
-            </p>
-          </div>
+              </p>
+            </div>
+            )}
 
           <div className="flex gap-6 justify-center overflow-x-auto pb-2">
             {popularCategories.map((category: any, index) => (
