@@ -15,6 +15,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import Dashboard from './pages/Dashboard';
+import BottomNav from './components/layout/BottomNav';
 
 function App() {
   return (
@@ -77,6 +78,8 @@ function App() {
           />
         </div>
       </Router>
+      <BottomNav/>
+
     </AppProvider>
   );
 }

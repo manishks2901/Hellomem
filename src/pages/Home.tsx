@@ -8,43 +8,43 @@ import ProductCard from "../components/common/ProductCard";
 import axios from "axios";
 import Config from "../../config";
 import Products from "./Products";
+import BottomNav from "../components/layout/BottomNav";
 const Home: React.FC = () => {
   const { state, dispatch } = useApp();
   const [currentBanner, setCurrentBanner] = useState(0);
   const [popularProducts, setPopularProducts] = useState([]);
   const [recentProducts, setRecentProducts] = useState([]);
   const [popularCategories, setPopularCategories] = useState([]);
-  const [ banner,setBanner ] = useState([])
-  const [ fetchData,setFetchData] = useState([])
+  const [banner, setBanner] = useState([]);
+  const [fetchData, setFetchData] = useState([]);
   useEffect(() => {
-  const fetchBanners = async () => {
-    try {
-      const response = await axios.post(
-        `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_HOME_SCREEN_BANNER}`,
-        {
-          requestParameters: {
-            recordValueJson: "[]"
+    const fetchBanners = async () => {
+      try {
+        const response = await axios.post(
+          `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_HOME_SCREEN_BANNER}`,
+          {
+            requestParameters: {
+              recordValueJson: "[]",
+            },
           }
-        }
-      );
+        );
 
-      // If the response is a JSON string, parse it
-      const parsed = response.data
-      setFetchData(JSON.parse(parsed.data))
-      
-      // TODO: setBanners(parsed); // ← If you’re storing in state
-    } catch (error) {
-      console.error('Error fetching or parsing banners:', error);
-    }
-  };
+        // If the response is a JSON string, parse it
+        const parsed = response.data;
+        setFetchData(JSON.parse(parsed.data));
 
-  fetchBanners();
+        // TODO: setBanners(parsed); // ← If you’re storing in state
+      } catch (error) {
+        console.error("Error fetching or parsing banners:", error);
+      }
+    };
 
-  const BannerData = fetchData.slice(-3);
-  setBanner(BannerData)
-  console.log("Banner data",BannerData)
+    fetchBanners();
 
-}, []);
+    const BannerData = fetchData.slice(-3);
+    setBanner(BannerData);
+    console.log("Banner data", BannerData);
+  }, []);
   const banners = [
     {
       id: "1",
@@ -117,35 +117,24 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-       <section className="py-12 bg-white dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {window.innerWidth >= 768 && (
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Popular Categories
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Explore our most popular categories and find exactly what you're
-              looking for
-              </p>
-            </div>
-            )}
-
-          <div className="flex gap-6 justify-center overflow-x-auto pb-2">
+      <section className="py-4 bg-white dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          {/* Horizontal Scroll Container */}
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
             {popularCategories.map((category: any, index) => (
               <motion.div
                 key={category.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="flex flex-col items-center min-w-[90px]"
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ y: -2 }}
+                className="flex-shrink-0 flex flex-col items-center min-w-[72px]"
               >
                 <Link
                   to={`/products?categoryId=${category.id}`}
                   className="flex flex-col items-center group"
                 >
-                  <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-gray-600 group-hover:border-blue-500 transition-all">
+                  <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 group-hover:border-pink-500 transition-all">
                     {category.imageUrl ? (
                       <img
                         src={category.imageUrl}
@@ -153,10 +142,10 @@ const Home: React.FC = () => {
                         className="object-cover w-full h-full"
                       />
                     ) : (
-                      <span className="text-3xl">{category.icon}</span>
+                      <span className="text-2xl">{category.icon}</span>
                     )}
                   </div>
-                  <span className="mt-2 text-sm font-medium text-gray-900 dark:text-white max-w-[80px] truncate block text-center">
+                  <span className="mt-2 text-xs font-medium text-gray-900 dark:text-white max-w-[72px] truncate text-center">
                     {category.name}
                   </span>
                 </Link>
@@ -164,9 +153,10 @@ const Home: React.FC = () => {
             ))}
           </div>
         </div>
-      </section> 
+      </section>
+
       {/* Hero Section */}
-      <section className="relative h-96 md:h-[500px] overflow-hidden">
+      <section className="relative h-80 p-4 sm:h-[400px] md:h-[500px] w-full overflow-hidden rounded-xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentBanner}
@@ -176,80 +166,35 @@ const Home: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="absolute inset-0"
           >
-            <div
-              className="w-full h-full bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${banners[currentBanner].image})`,
-              }}
-            >
-              <div className="absolute inset-0 bg-black/40" />
-              <div className="relative h-full flex items-center justify-center text-center text-white px-4">
-                <div className="max-w-3xl">
-                  <motion.h1
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-4xl md:text-6xl font-bold mb-4"
-                  >
-                    {banners[currentBanner].title}
-                  </motion.h1>
-                  <motion.p
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="text-xl md:text-2xl mb-2"
-                  >
-                    {banners[currentBanner].subtitle}
-                  </motion.p>
-                  <motion.p
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                    className="text-lg mb-8"
-                  >
-                    {banners[currentBanner].description}
-                  </motion.p>
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.8 }}
-                  >
-                    <Link
-                      to="/products"
-                      className="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors inline-flex items-center space-x-2"
-                    >
-                      <span>{banners[currentBanner].cta}</span>
-                      <ArrowRight className="h-5 w-5" />
-                    </Link>
-                  </motion.div>
-                </div>
-              </div>
-            </div>
+            <img
+              src={banners[currentBanner].image}
+              alt={banners[currentBanner].title}
+              className="w-full h-full object-cover"
+            />
           </motion.div>
         </AnimatePresence>
 
-        {/* Banner Navigation */}
         <button
           onClick={prevBanner}
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/50 hover:bg-white text-black rounded-full p-1 sm:p-2"
         >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        <button
-          onClick={nextBanner}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-colors"
-        >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronLeft className="h-5 w-5" />
         </button>
 
-        {/* Banner Indicators */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        <button
+          onClick={nextBanner}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/50 hover:bg-white text-black rounded-full p-1 sm:p-2"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-1">
           {banners.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentBanner(index)}
-              className={`w-3 h-3 rounded-full transition-colors ${
-                index === currentBanner ? "bg-white" : "bg-white/50"
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === currentBanner ? "bg-purple-600" : "bg-gray-300"
               }`}
             />
           ))}
@@ -257,7 +202,6 @@ const Home: React.FC = () => {
       </section>
 
       {/* Popular Categories Section */}
-      
 
       {/* Popular Products */}
       {/* <section className="py-12 bg-gray-50 dark:bg-gray-900">
@@ -287,9 +231,9 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section> */}
-      <Products/>
+      <Products />
       {/* New Arrivals */}
-      
+
       {recentProducts.length > 0 && (
         <section className="py-12 bg-white dark:bg-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -349,10 +293,9 @@ const Home: React.FC = () => {
           </motion.div>
         </div>
       </section>
+      <BottomNav/>
     </div>
   );
 };
 
 export default Home;
-
-
