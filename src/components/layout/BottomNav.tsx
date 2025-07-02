@@ -1,5 +1,3 @@
-
-
 import { Home, Shirt, Store, HelpCircle, User } from "lucide-react";
 
 export default function BottomNav() {
@@ -23,12 +21,13 @@ export default function BottomNav() {
           <span className="text-xs">Help</span>
         </li>
         <li
-            className="flex flex-col items-center cursor-pointer"
-            onClick={() => window.location.href = "/login"}
+          className="flex flex-col items-center cursor-pointer"
+          onClick={() => (window.location.href = "/login")}
         >
-            <User size={24} />
-            <span className="text-xs">Account</span>
-        </li>  </ul>
+          <User size={24} />
+          <span className="text-xs">Account</span>
+        </li>
+      </ul>
     </nav>
   );
 }
