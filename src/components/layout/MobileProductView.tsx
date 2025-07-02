@@ -3,11 +3,23 @@ import { Heart, Star, X } from 'lucide-react';
 import { productsAPI } from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const genderOptions = [
-  { label: 'Women', img: '/images/women.png' },
-  { label: 'Men', img: '/images/men.png' },
-  { label: 'Girls', img: '/images/girls.png' },
-  { label: 'Boys', img: '/images/boys.png' },
+const genderOptions =[
+  {
+    label: 'Women',
+    img: 'https://images.unsplash.com/photo-1517832207067-4db24a2ae47c?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    label: 'Men',
+    img: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    label: 'Girls',
+    img: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    label: 'Boys',
+    img: 'https://images.unsplash.com/photo-1550525811-e5869dd03032?auto=format&fit=crop&w=800&q=80',
+  },
 ];
 
 const MobileProductList: React.FC = () => {
