@@ -127,7 +127,7 @@ const Products: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Products
+              Products For You
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-1">
               {filteredProducts.length} products found

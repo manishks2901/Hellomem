@@ -7,6 +7,7 @@ import { productsAPI, categoriesAPI } from "../services/api";
 import ProductCard from "../components/common/ProductCard";
 import axios from "axios";
 import Config from "../../config";
+import Products from "./Products";
 const Home: React.FC = () => {
   const { state, dispatch } = useApp();
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -116,6 +117,52 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+       <section className="py-12 bg-white dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Popular Categories
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Explore our most popular categories and find exactly what you're
+              looking for
+            </p>
+          </div>
+
+          <div className="flex gap-6 justify-center overflow-x-auto pb-2">
+            {popularCategories.map((category: any, index) => (
+              <motion.div
+                key={category.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="flex flex-col items-center min-w-[90px]"
+              >
+                <Link
+                  to={`/products?categoryId=${category.id}`}
+                  className="flex flex-col items-center group"
+                >
+                  <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-gray-600 group-hover:border-blue-500 transition-all">
+                    {category.imageUrl ? (
+                      <img
+                        src={category.imageUrl}
+                        alt={category.name}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <span className="text-3xl">{category.icon}</span>
+                    )}
+                  </div>
+                  <span className="mt-2 text-sm font-medium text-gray-900 dark:text-white max-w-[80px] truncate block text-center">
+                    {category.name}
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section> 
       {/* Hero Section */}
       <section className="relative h-96 md:h-[500px] overflow-hidden">
         <AnimatePresence mode="wait">
@@ -208,47 +255,10 @@ const Home: React.FC = () => {
       </section>
 
       {/* Popular Categories Section */}
-      <section className="py-12 bg-white dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Popular Categories
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Explore our most popular categories and find exactly what you're
-              looking for
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {popularCategories.map((category: any, index) => (
-              <motion.div
-                key={category.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-              >
-                <Link
-                  to={`/products?categoryId=${category.id}`}
-                  className="block text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <div className="text-4xl mb-3">{category.icon}</div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                    {category.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {category.productCount} products
-                  </p>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      
 
       {/* Popular Products */}
-      <section className="py-12 bg-gray-50 dark:bg-gray-900">
+      {/* <section className="py-12 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -274,9 +284,10 @@ const Home: React.FC = () => {
             ))}
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <Products/>
       {/* New Arrivals */}
+      
       {recentProducts.length > 0 && (
         <section className="py-12 bg-white dark:bg-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
