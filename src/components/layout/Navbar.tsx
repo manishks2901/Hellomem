@@ -103,13 +103,13 @@ const Navbar: React.FC = () => {
                     <div className="py-2">
                       {state.categories.map((category) => (
                         <Link
-                          key={category.id}
-                          to={`/products?categoryId=${category.id}`}
+                          key={category.CategoryID}
+                          to={`/products?categoryId=${category.CategoryID}`}
                           className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                           onClick={() => setIsCategoriesOpen(false)}
                         >
-                          <span className="mr-2">{category.icon}</span>
-                          {category.name}
+                          <span className="mr-2">{category.CategoryID}</span>
+                          {category.Name}
                         </Link>
                       ))}
                     </div>
