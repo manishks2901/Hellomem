@@ -1,131 +1,119 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight,  Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp } from "../contexts/AppContext";
-import { productsAPI, categoriesAPI } from "../services/api";
-import ProductCard from "../components/common/ProductCard";
-import axios from "axios";
+
 import Config from "../../config";
-import Products from "./Products";
-import BottomNav from "../components/layout/BottomNav";
+
+import {
+  GET_BANNER,
+  GET_ALL_PRODUCTS,
+  POPULAR_CATEGORY,
+  PopularCategory,
+  Product,
+  Banner,
+  GET_RECENTS_PRODUCTS_LIST,
+} from "../services/apiConfig";
 import MobileProductList from "../components/layout/MobileProductView";
+import Products from "./Products";
+
+
+
 const Home: React.FC = () => {
-  const { state, dispatch } = useApp();
+  const { state,dispatch } = useApp();
+  const navigate = useNavigate();
+  
   const [currentBanner, setCurrentBanner] = useState(0);
-  const [popularProducts, setPopularProducts] = useState([]);
-  const [recentProducts, setRecentProducts] = useState([]);
-  const [popularCategories, setPopularCategories] = useState([]);
-  const [banner, setBanner] = useState([]);
-  const [fetchData, setFetchData] = useState([]);
+  const [banner, setBanner] = useState<Banner[]>([]);
+  const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const [popularCategories, setPopularCategories] = useState<PopularCategory[]>(
+    []
+  );
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const isMobile = window.innerWidth < 768;
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      dispatch({ type: 'SET_FILTERS', payload: { searchQuery: searchQuery.trim() } });
+      navigate('/products');
+    }
+  };
+
   useEffect(() => {
-    const fetchBanners = async () => {
+    (async () => {
       try {
-        const response = await axios.post(
-          `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_HOME_SCREEN_BANNER}`,
-          {
-            requestParameters: {
-              recordValueJson: "[]",
-            },
-          }
-        );
-
-
-        const parsed = response.data;
-        setFetchData(JSON.parse(parsed.data));
-
-
-      } catch (error) {
-        console.error("Error fetching or parsing banners:", error);
+        const [bannerRes, categoryRes, popularRes, recentRes] =
+          await Promise.all([
+            GET_BANNER(),
+            POPULAR_CATEGORY(),
+            GET_ALL_PRODUCTS(),
+            GET_RECENTS_PRODUCTS_LIST()
+          ]);
+        console.log("Banners",bannerRes)
+        setBanner(bannerRes);
+        setPopularCategories(categoryRes);
+        setPopularProducts(popularRes);
+        setRecentProducts(recentRes);
+      } catch (err) {
+        console.error("Failed to load home data", err);
       }
-    };
-
-    fetchBanners();
-
-    const BannerData = fetchData.slice(-3);
-    setBanner(BannerData);
-    console.log("Banner data", BannerData);
+    })();
   }, []);
-  const banners = [
-    {
-      id: "1",
-      title: "Summer Sale",
-      subtitle: "Up to 70% Off",
-      description: "Biggest sale of the year on fashion and electronics",
-      image:
-        "https://images.pexels.com/photos/1488463/pexels-photo-1488463.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      cta: "Shop Now",
-    },
-    {
-      id: "2",
-      title: "New Arrivals",
-      subtitle: "Fresh Collection",
-      description: "Discover the latest trends in fashion and lifestyle",
-      image:
-        "https://images.pexels.com/photos/914668/pexels-photo-914668.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      cta: "Explore",
-    },
-    {
-      id: "3",
-      title: "Electronics Deals",
-      subtitle: "Tech at Best Prices",
-      description: "Latest gadgets and electronics at unbeatable prices",
-      image:
-        "https://images.pexels.com/photos/356056/pexels-photo-356056.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      cta: "Shop Electronics",
-    },
-  ];
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        dispatch({ type: "SET_LOADING", payload: true });
-
-        const [popularRes, recentRes, categoriesRes] = await Promise.all([
-          productsAPI.getPopular(),
-          productsAPI.getRecent(),
-          categoriesAPI.getPopular(),
-        ]);
-
-        setPopularProducts(popularRes.data);
-        setRecentProducts(recentRes.data);
-        setPopularCategories(categoriesRes.data);
-      } catch (error) {
-        console.error("Failed to fetch home data:", error);
-      } finally {
-        dispatch({ type: "SET_LOADING", payload: false });
-      }
-    };
-
-    fetchData();
-  }, [dispatch]);
-
-  // Auto-rotate banners
-  useEffect(() => {
+    if (!banner.length) return;
     const interval = setInterval(() => {
-      setCurrentBanner((prev) => (prev + 1) % banners.length);
+      setCurrentBanner((prev) => (prev + 1) % banner.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [banner.length]);
 
-  const nextBanner = () => {
-    setCurrentBanner((prev) => (prev + 1) % banners.length);
-  };
-
-  const prevBanner = () => {
-    setCurrentBanner((prev) => (prev - 1 + banners.length) % banners.length);
-  };
+  const nextBanner = () =>
+    setCurrentBanner((prev) => (prev + 1) % banner.length);
+  const prevBanner = () =>
+    setCurrentBanner((prev) => (prev - 1 + banner.length) % banner.length);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="md:hidden pb-4 px-4 mt-3">
+        <form onSubmit={handleSearch} className="w-full">
+          <div className="relative">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search for products..."
+          className="w-full pl-12 pr-12 py-3 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white transition-all"
+          autoComplete="off"
+        />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+            aria-label="Clear search"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+          <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.415L11.414 10l4.95 4.95a1 1 0 01-1.414 1.415L10 11.414l-4.95 4.95a1 1 0 01-1.415-1.415L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
+            </svg>
+          </button>
+        )}
+        
+          </div>
+        </form>
+      </div>
+      {/* Categories */}
       <section className="py-4 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
           {/* Horizontal Scroll Container */}
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-            {popularCategories.map((category: any, index) => (
+            {popularCategories.map((category: PopularCategory, index) => (
               <motion.div
-                key={category.id}
+                key={category.CategoryID}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -133,22 +121,27 @@ const Home: React.FC = () => {
                 className="flex-shrink-0 flex flex-col items-center min-w-[72px]"
               >
                 <Link
-                  to={`/products?categoryId=${category.id}`}
+                  to={`/products?categoryId=${category.CategoryID}`}
                   className="flex flex-col items-center group"
                 >
                   <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600 group-hover:border-pink-500 transition-all">
-                    {category.imageUrl ? (
+                    {category.AttachmentURL ? (
                       <img
-                        src={category.imageUrl}
-                        alt={category.name}
+                        src={`${Config.ADMIN_BASE_URL}${category.AttachmentURL}`}
+                        alt={
+                          category.AttachmentName || category.Name || "Category"
+                        }
                         className="object-cover w-full h-full"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
                       />
                     ) : (
-                      <span className="text-2xl">{category.icon}</span>
+                      <span className="text-2xl">No Image</span>
                     )}
                   </div>
                   <span className="mt-2 text-xs font-medium text-gray-900 dark:text-white max-w-[72px] truncate text-center">
-                    {category.name}
+                    {category.AttachmentName}
                   </span>
                 </Link>
               </motion.div>
@@ -156,27 +149,30 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* Hero Section */}
-      <section className="relative h-80 p-4 sm:h-[400px] md:h-[500px] w-full overflow-hidden rounded-xl">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentBanner}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="absolute inset-0"
-          >
-            <img
-              src={banners[currentBanner].image}
-              alt={banners[currentBanner].title}
-              className="w-full h-full object-cover"
-            />
-          </motion.div>
+      {/* Banner */}
+       <section className="relative h-80 p-4 sm:h-[400px] md:h-[500px] w-full overflow-hidden rounded-xl">
+       <AnimatePresence mode="wait">
+          {banner && banner[currentBanner] && ( // Add this check
+            <motion.div
+              key={currentBanner}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1 }}
+              className="absolute inset-0"
+            >
+              <img
+                src={`${Config.ADMIN_BASE_URL}${banner[currentBanner].BannerImgUrl}`}
+                alt={banner[currentBanner].BottomTitle}
+                className="w-full h-full object-cover"
+              />
+            </motion.div>
+          )} {/* Close the conditional rendering */}
         </AnimatePresence>
 
-        <button
+        {/* <button
+          type="button"
+          title="Previous banner"
           onClick={prevBanner}
           className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/50 hover:bg-white text-black rounded-full p-1 sm:p-2"
         >
@@ -184,16 +180,22 @@ const Home: React.FC = () => {
         </button>
 
         <button
+          type="button"
+          title="Next banner"
+          aria-label="Next banner"
           onClick={nextBanner}
           className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/50 hover:bg-white text-black rounded-full p-1 sm:p-2"
         >
           <ChevronRight className="h-5 w-5" />
-        </button>
+        </button> */}
 
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-1">
-          {banners.map((_, index) => (
+          {banner.map((_, index) => (
             <button
               key={index}
+              type="button"
+              title={`Go to banner ${index + 1}`}
+              aria-label={`Go to banner ${index + 1}`}
               onClick={() => setCurrentBanner(index)}
               className={`w-2 h-2 rounded-full transition-colors ${
                 index === currentBanner ? "bg-purple-600" : "bg-gray-300"
@@ -202,101 +204,61 @@ const Home: React.FC = () => {
           ))}
         </div>
       </section>
-
-      {/* Popular Categories Section */}
+      {
+        isMobile ? <MobileProductList/> : <Products/>
+      }
 
       {/* Popular Products */}
       {/* <section className="py-12 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Popular Products
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300">
-                Most loved products by our customers
-              </p>
-            </div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Popular Products
+            </h2>
             <Link
               to="/products"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center space-x-1"
+              className="text-blue-600 hover:underline dark:text-blue-400"
             >
-              <span>View All</span>
-              <ArrowRight className="h-4 w-4" />
+              View All <ArrowRight className="inline-block ml-1 h-4 w-4" />
             </Link>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {popularProducts.map((product: any, index) => (
-              <ProductCard key={product.id} product={product} index={index} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {popularProducts.map((product, index) => (
+              <ProductCard
+                key={product.ProductId}
+                product={product}
+                index={index}
+              />
             ))}
           </div>
         </div>
       </section> */}
-      {
-        isMobile ? <MobileProductList/> : <Products/>
-      }
-      {/* New Arrivals */}
 
-      {recentProducts.length > 0 && (
-        <section className="py-12 bg-white dark:bg-gray-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  New Arrivals
-                </h2>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Fresh products just added to our collection
-                </p>
-              </div>
-              <Link
-                to="/products?new=true"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center space-x-1"
-              >
-                <span>View All</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recentProducts.map((product: any, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Newsletter Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-500 to-teal-500">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Stay Updated with Our Latest Deals
+      {/* Recent Products */}
+      {/* <section className="py-12 bg-white dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Recent Products
             </h2>
-            <p className="text-white/90 text-lg mb-8">
-              Subscribe to our newsletter and never miss out on amazing offers
-              and new arrivals
-            </p>
-            <div className="max-w-md mx-auto flex">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-l-lg border-0 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-500"
+            <Link
+              to="/products?recent=true"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              View All <ArrowRight className="inline-block ml-1 h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {recentProducts.map((product, index) => (
+              <ProductCard
+                key={product.ProductId}
+                product={product}
+                index={index}
               />
-              <button className="bg-white text-blue-600 px-6 py-3 rounded-r-lg font-semibold hover:bg-gray-100 transition-colors">
-                Subscribe
-              </button>
-            </div>
-          </motion.div>
+            ))}
+          </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };

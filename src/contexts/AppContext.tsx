@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import { Category } from '../services/apiConfig';
 
 // Types
 export interface User {
@@ -36,13 +37,13 @@ export interface CartItem {
   seller: string;
 }
 
-export interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  icon: string;
-  productCount?: number;
-}
+// export interface Category {
+//   id: number;
+//   name: string;
+//   slug: string;
+//   icon: string;
+//   productCount?: number;
+// }
 
 export interface Order {
   id: number;
@@ -88,7 +89,7 @@ type AppAction =
   | { type: 'SET_USER'; payload: User | null }
   | { type: 'SET_AUTHENTICATED'; payload: boolean }
   | { type: 'SET_PRODUCTS'; payload: Product[] }
-  | { type: 'SET_CATEGORIES'; payload: Category[] }
+  | { type: 'SET_CATEGORIES'; payload:Category[] }
   | { type: 'SET_CART'; payload: CartItem[] }
   | { type: 'SET_ORDERS'; payload: Order[] }
   | { type: 'SET_FILTERS'; payload: Partial<AppState['filters']> }
@@ -182,7 +183,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const parsedUser = JSON.parse(user);
         dispatch({ type: 'SET_USER', payload: parsedUser });
         dispatch({ type: 'SET_AUTHENTICATED', payload: true });
-      } catch (error) {
+      } catch  {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
       }

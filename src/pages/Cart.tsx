@@ -1,13 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApp } from '../contexts/AppContext';
 import { cartAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import axios from 'axios';
+import Config from '../../config';
+import type { Product } from './ProductDetail';
 
 const Cart: React.FC = () => {
   const { state, dispatch } = useApp();
+  const [productDetails, setProductDetails] = useState<Record<number, Product>>({});
+  const URL = Config.ADMIN_BASE_URL;
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -20,24 +25,51 @@ const Cart: React.FC = () => {
         }
       }
     };
-
     fetchCart();
   }, [state.isAuthenticated, dispatch]);
+
+  useEffect(() => {
+    const fetchAllProductDetails = async () => {
+      const promises = state.cart.map(async (item) => {
+        const productPayload = JSON.stringify({
+          requestParameters: {
+            ProductId: item.productId,
+            recordValueJson: '[]',
+          },
+        });
+        try {
+          const res = await axios.post(
+            `${URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_PRODUCT_DETAIL}`,
+            productPayload,
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+          let parsed: Product | undefined;
+          const raw = JSON.parse(res.data?.data || '{}');
+          if (Array.isArray(raw)) parsed = raw[0];
+          else parsed = raw;
+          return [item.productId, parsed] as [number, Product];
+        } catch {
+          return [item.productId, undefined];
+        }
+      });
+      const results = await Promise.all(promises);
+      setProductDetails(Object.fromEntries(results.filter(([, p]) => p)));
+    };
+    if (state.cart.length > 0) fetchAllProductDetails();
+  }, [state.cart, URL]);
 
   const updateQuantity = async (productId: number, quantity: number) => {
     if (quantity <= 0) {
       await removeItem(productId);
       return;
     }
-
     try {
       await cartAPI.update(productId, quantity);
-      
       const updatedCart = state.cart.map(item =>
         item.productId === productId ? { ...item, quantity } : item
       );
       dispatch({ type: 'SET_CART', payload: updatedCart });
-    } catch (error) {
+    } catch {
       toast.error('Failed to update quantity');
     }
   };
@@ -45,18 +77,17 @@ const Cart: React.FC = () => {
   const removeItem = async (productId: number) => {
     try {
       await cartAPI.remove(productId);
-      
       const updatedCart = state.cart.filter(item => item.productId !== productId);
       dispatch({ type: 'SET_CART', payload: updatedCart });
       toast.success('Item removed from cart');
-    } catch (error) {
+    } catch {
       toast.error('Failed to remove item');
     }
   };
 
   const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const shipping = subtotal > 1000 ? 0 : 50;
-  const tax = subtotal * 0.18; // 18% GST
+  const tax = subtotal * 0.18;
   const total = subtotal + shipping + tax;
 
   if (state.cart.length === 0) {
@@ -87,70 +118,70 @@ const Cart: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
           Shopping Cart
         </h1>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-              {state.cart.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="p-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
-                >
-                  <div className="flex items-center space-x-4">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-                    
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {item.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        by {item.seller}
-                      </p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                        ₹{item.price.toLocaleString()}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center space-x-3">
+              {state.cart.map((item, index) => {
+                const product = productDetails[item.productId];
+                const images = product?.ProductImagesJson?.map(img => `${URL}${img.AttachmentURL}`) || [];
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="p-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <img
+                        src={images[0] || item.image}
+                        alt={product?.ProductName || item.name}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {product?.ProductName || item.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          by {product?.VendorName || item.seller}
+                        </p>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                          ₹{(product?.Price || item.price).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                          title="Decrease quantity"
+                        >
+                          <Minus className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                        </button>
+                        <span className="w-8 text-center font-semibold text-gray-900 dark:text-white">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                          title="Increase quantity"
+                        >
+                          <Plus className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                        </button>
+                      </div>
                       <button
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                        className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        onClick={() => removeItem(item.productId)}
+                        className="p-2 text-red-500 hover:text-red-700 transition-colors"
+                        title="Remove item"
                       >
-                        <Minus className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                      </button>
-                      
-                      <span className="w-8 text-center font-semibold text-gray-900 dark:text-white">
-                        {item.quantity}
-                      </span>
-                      
-                      <button
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                        className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                      >
-                        <Plus className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     </div>
-
-                    <button
-                      onClick={() => removeItem(item.productId)}
-                      className="p-2 text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
-
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <motion.div
@@ -161,23 +192,19 @@ const Cart: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                 Order Summary
               </h2>
-              
               <div className="space-y-3">
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>Subtotal ({state.cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
-                
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>Shipping</span>
                   <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
                 </div>
-                
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>Tax (GST)</span>
                   <span>₹{tax.toFixed(0)}</span>
                 </div>
-                
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white">
                     <span>Total</span>
@@ -185,7 +212,6 @@ const Cart: React.FC = () => {
                   </div>
                 </div>
               </div>
-
               {shipping > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -193,14 +219,12 @@ const Cart: React.FC = () => {
                   </p>
                 </div>
               )}
-
               <Link
                 to="/checkout"
                 className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors mt-6 block text-center font-semibold"
               >
                 Proceed to Checkout
               </Link>
-
               <Link
                 to="/products"
                 className="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors mt-3 block text-center"

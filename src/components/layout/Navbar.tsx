@@ -17,6 +17,7 @@ import { useApp } from '../../contexts/AppContext';
 import { categoriesAPI, authAPI } from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import SidebarWithCategoryPanel from './SidebarWithCategoryPanel';
 
 const Navbar: React.FC = () => {
   const { state, dispatch } = useApp();
@@ -65,7 +66,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <nav className="md:sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Desktop NavBar Row */}
         <div className="hidden md:flex items-center justify-between h-20 w-full">
@@ -233,54 +234,20 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Mobile Search */}
-        <div className="md:hidden pb-4">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for products..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-          </form>
-        </div>
+        
       </div>
-
+     
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+        initial={{ x: '-100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '-100%' }}
+        transition={{ type: 'tween', duration: 0.3 }}
+        className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
           >
-            <div className="px-4 py-4 space-y-3">
-              <Link to="/" className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onClick={() => setIsMenuOpen(false)}>Home</Link>
-              <Link to="/products" className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onClick={() => setIsMenuOpen(false)}>Products</Link>
-              <Link to="/about" className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onClick={() => setIsMenuOpen(false)}>About</Link>
-              <Link to="/contact" className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onClick={() => setIsMenuOpen(false)}>Contact</Link>
-
-              {state.isAuthenticated ? (
-                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    {state.user?.name}
-                  </p>
-                  <Link to="/cart" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors mb-2" onClick={() => setIsMenuOpen(false)}>
-                    <ShoppingCart className="h-5 w-5 mr-2" /> Cart ({state.cart.reduce((sum, item) => sum + item.quantity, 0)})
-                  </Link>
-                  <Link to="/dashboard" className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors mb-2" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
-                  <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Sign Out</button>
-                </div>
-              ) : (
-                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <Link to="/login" className="block bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-center" onClick={() => setIsMenuOpen(false)}>Login</Link>
-                </div>
-              )}
-            </div>
+        <SidebarWithCategoryPanel/>
           </motion.div>
         )}
       </AnimatePresence>
