@@ -218,7 +218,7 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          {/* Right: Wishlist + Cart (Mobile Style) */}
+
           <div className="flex items-center space-x-4 md:hidden">
             <Link to="/wishlist" className="p-2">
               <Heart className="h-6 w-6 text-red-500" />

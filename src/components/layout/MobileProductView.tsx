@@ -44,7 +44,7 @@ const MobileProductList: React.FC = () => {
     );
   }, []);
 
-  // Filtering logic (ref: Products.tsx)
+
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
@@ -56,7 +56,7 @@ const MobileProductList: React.FC = () => {
     }
 
 
-    // Category filtering (if Product has CategoryID)
+
     if (currentCategory !== null) {
       filtered = filtered.filter((p) => p.CategoryID === currentCategory);
     }
@@ -87,7 +87,7 @@ const MobileProductList: React.FC = () => {
       case "rating":
         filtered = [...filtered].sort((a, b) => b.Rating - a.Rating);
         break;
-      // 'newest' sorting is skipped because Product does not have CreatedOn
+
       default:
         break;
     }
@@ -97,7 +97,7 @@ const MobileProductList: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen px-3 pb-24">
-      {/* Sticky Filter Bar */}
+
       <div className="sticky top-0 z-20 bg-white border-b border-gray-200 py-2 px-2">
         <div className="grid grid-cols-4 gap-[1px] bg-gray-200 text-xs">
           <button
@@ -131,7 +131,7 @@ const MobileProductList: React.FC = () => {
         </div>
       </div>
 
-      {/* Filtered Product Grid */}
+
       <div className="grid grid-cols-2 gap-3 mt-3">
         {filteredProducts.map((product: Product) => (
           <Link key={product.ProductId} to={`/products/${product.ProductId}`}>
@@ -161,7 +161,7 @@ const MobileProductList: React.FC = () => {
         ))}
       </div>
 
-      {/* Modals for Filters, Category, Gender, Sort */}
+
       <AnimatePresence>
         {showGenderModal && (
           <motion.div
