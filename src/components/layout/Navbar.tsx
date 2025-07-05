@@ -14,10 +14,11 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { categoriesAPI, authAPI } from '../../services/api';
+import { authAPI } from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import SidebarWithCategoryPanel from './SidebarWithCategoryPanel';
+import { GET_CATEGORY_LIST } from '../../services/apiConfig';
 
 const Navbar: React.FC = () => {
   const { state, dispatch } = useApp();
@@ -30,8 +31,8 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await categoriesAPI.getAll();
-        dispatch({ type: 'SET_CATEGORIES', payload: response.data });
+        const response = await GET_CATEGORY_LIST();
+        dispatch({ type: 'SET_CATEGORIES', payload: response });
       } catch (error) {
         console.error('Failed to fetch categories:', error);
       }
@@ -60,7 +61,7 @@ const Navbar: React.FC = () => {
       setIsUserMenuOpen(false);
       toast.success('Logged out successfully');
       navigate('/');
-    } catch (error) {
+    } catch {
       toast.error('Logout failed');
     }
   };
@@ -108,7 +109,7 @@ const Navbar: React.FC = () => {
                           className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                           onClick={() => setIsCategoriesOpen(false)}
                         >
-                          <span className="mr-2">{category.CategoryID}</span>
+                          {/* <span className="mr-2">{category.icon}</span> */}
                           {category.Name}
                         </Link>
                       ))}

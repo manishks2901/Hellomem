@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight,  Search } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight,  Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp } from "../contexts/AppContext";
 
@@ -14,9 +14,12 @@ import {
   Product,
   Banner,
   GET_RECENTS_PRODUCTS_LIST,
+  GET_CAMPAIGN_LIST,
+  Campaign,
 } from "../services/apiConfig";
 import MobileProductList from "../components/layout/MobileProductView";
 import Products from "./Products";
+import ProductCard from "../components/common/ProductCard";
 
 
 
@@ -32,7 +35,7 @@ const Home: React.FC = () => {
     []
   );
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [campaign,setCampaign] = useState<Campaign[]>([])
   const isMobile = window.innerWidth < 768;
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,15 +48,17 @@ const Home: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const [bannerRes, categoryRes, popularRes, recentRes] =
+        const [bannerRes, categoryRes, popularRes, recentRes,webCampaignRes] =
           await Promise.all([
             GET_BANNER(),
             POPULAR_CATEGORY(),
             GET_ALL_PRODUCTS(),
-            GET_RECENTS_PRODUCTS_LIST()
+            GET_RECENTS_PRODUCTS_LIST(),
+            GET_CAMPAIGN_LIST()
           ]);
         console.log("Banners",bannerRes)
         setBanner(bannerRes);
+        setCampaign(webCampaignRes)
         setPopularCategories(categoryRes);
         setPopularProducts(popularRes);
         setRecentProducts(recentRes);
@@ -208,34 +213,18 @@ const Home: React.FC = () => {
         isMobile ? <MobileProductList/> : <Products/>
       }
 
+
+
       {/* Popular Products */}
-      {/* <section className="py-12 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Popular Products
-            </h2>
-            <Link
-              to="/products"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              View All <ArrowRight className="inline-block ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {popularProducts.map((product, index) => (
-              <ProductCard
-                key={product.ProductId}
-                product={product}
-                index={index}
-              />
-            ))}
-          </div>
-        </div>
-      </section> */}
+      /
+      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {campaign.map((item) => (
+        <CampaignCard key={item.CampaignId} campaign={item} />
+      ))}
+    </div>
 
       {/* Recent Products */}
-      {/* <section className="py-12 bg-white dark:bg-gray-800">
+      <section className="py-12 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -258,9 +247,33 @@ const Home: React.FC = () => {
             ))}
           </div>
         </div>
-      </section> */}
+      </section>
     </div>
   );
 };
 
 export default Home;
+type Props = {
+  campaign: Campaign;
+};
+
+export const CampaignCard: React.FC<Props> = ({ campaign }) => {
+  return (
+    <div className="rounded-lg overflow-hidden shadow-md relative group">
+      <img
+        src={`${Config.ADMIN_BASE_URL}${campaign.CoverPictureUrl}`}
+        alt={campaign.MainTitle}
+        className="w-full h-48 object-cover transition-transform group-hover:scale-105"
+      />
+      <div className="absolute top-4 left-4 bg-red-500 text-white text-sm px-2 py-1 rounded">
+        {campaign.DiscountTitle}
+      </div>
+      <div className="absolute bottom-4 left-4 text-white">
+        <h2 className="text-lg font-bold drop-shadow">{campaign.MainTitle}</h2>
+        <button className="mt-2 px-4 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm shadow">
+          VIEW DETAIL
+        </button>
+      </div>
+    </div>
+  );
+};

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { GET_ALL_PRODUCTS, GET_PRODUCT_DETAIL } from './apiConfig';
 
 // Base API configuration
 const API_BASE_URL = 'https://api.Hellomem.com/api'; 
@@ -130,19 +131,6 @@ const mockResponses = {
     }
   ],
 
-  // Cart
-  '/cart': [
-    {
-      id: 1,
-      productId: 1,
-      name: 'Wireless Bluetooth Headphones',
-      price: 2999,
-      image: 'https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg?auto=compress&cs=tinysrgb&w=500',
-      quantity: 2,
-      seller: 'TechStore'
-    }
-  ],
-
   // Orders
   '/orders': [
     {
@@ -207,12 +195,12 @@ const mockApiCall = (endpoint: string, method: string = 'GET', data?: any): Prom
       }
 
       // Handle other endpoints
-      const mockData = mockResponses[endpoint as keyof typeof mockResponses];
-      if (mockData) {
-        resolve({ data: mockData });
-      } else {
-        reject({ response: { status: 404, data: { message: 'Endpoint not found' } } });
-      }
+      // const mockData = mockResponses[endpoint as keyof typeof mockResponses];
+      // if (mockData) {
+      //   resolve({ data: mockData });
+      // } else {
+      //   reject({ response: { status: 404, data: { message: 'Endpoint not found' } } });
+      // }
     }, 500); // Simulate network delay
   });
 };
@@ -234,25 +222,23 @@ export const categoriesAPI = {
   getPopular: () => mockApiCall('/categories/popular')
 };
 
-export const productsAPI = {
-  getAll: (params?: any) => mockApiCall('/products'),
-  getById: (id: string) => {
-    const products = mockResponses['/products'];
-    const product = products.find((p: any) => p.id === parseInt(id));
-    return Promise.resolve({ data: product });
-  },
-  getPopular: () => {
-    const products = mockResponses['/products'].slice(0, 6);
-    return Promise.resolve({ data: products });
-  },
-  getRecent: () => {
-    const products = mockResponses['/products'].filter((p: any) => p.isNew);
-    return Promise.resolve({ data: products });
-  }
-};
+// export const productsAPI = {
+//   getAll: () => GET_ALL_PRODUCTS(),
+//   getById: (id: string) => {
+//     const product = GET_PRODUCT_DETAIL(id)
+//     return Promise.resolve({ data: product });
+//   },
+//   getPopular: () => {
+//     const products = mockResponses['/products'].slice(0, 6);
+//     return Promise.resolve({ data: products });
+//   },
+//   getRecent: () => {
+//     const products = mockResponses['/products'].filter((p: any) => p.isNew);
+//     return Promise.resolve({ data: products });
+//   }
+// };
 
 export const cartAPI = {
-  get: () => mockApiCall('/cart'),
   add: (productId: number, quantity: number = 1) =>
     Promise.resolve({ data: { success: true } }),
   update: (productId: number, quantity: number) =>

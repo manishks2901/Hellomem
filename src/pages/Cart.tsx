@@ -7,7 +7,8 @@ import { cartAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import Config from '../../config';
-import type { Product } from './ProductDetail';
+import { Product } from '../services/apiConfig';
+
 
 const Cart: React.FC = () => {
   const { state, dispatch } = useApp();

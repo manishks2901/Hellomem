@@ -1,230 +1,256 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useApp } from '../../contexts/AppContext';
-import toast from 'react-hot-toast';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { GET_COUNTRIES_LIST, GET_STATE_LIST, CountryList, StateProvince } from '../../services/apiConfig';
+import Config from '../../../config';
 
-const SignUp: React.FC = () => {
-  const { dispatch } = useApp();
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+export type RegisterRequestParameters = {
+  FirstName: string;
+  LastName: string;
+  EmailAddress: string;
+  Password: string;
+  MobileNo: string;
+  AddressLineOne: string;
+  CityId: string;
+  StateProvinceId: string;
+  PostalCode: string;
+  CountryID: string;
+};
+
+const Signup: React.FC = () => {
+  const [form, setForm] = useState<RegisterRequestParameters>({
+    FirstName: '',
+    LastName: '',
+    EmailAddress: '',
+    Password: '',
+    MobileNo: '',
+    AddressLineOne: '',
+    CityId: '',
+    StateProvinceId: '',
+    PostalCode: '',
+    CountryID: '',
   });
+  const [countries, setCountries] = useState<CountryList[]>([]);
+  const [states, setStates] = useState<StateProvince[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    GET_COUNTRIES_LIST().then(setCountries);
+  }, []);
+
+  useEffect(() => {
+    if (form.CountryID) {
+      GET_STATE_LIST(form.CountryID).then(setStates);
+    } else {
+      setStates([]);
+    }
+  }, [form.CountryID]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      toast.error('Please fill in all fields');
-      return;
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const payload = { requestParameters: form };
+      await axios.post(
+        `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}signup-user`,
+        payload,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      setSuccess('Signup successful! Please login.');
+      setForm({
+        FirstName: '', LastName: '', EmailAddress: '', Password: '', MobileNo: '', AddressLineOne: '', CityId: '', StateProvinceId: '', PostalCode: '', CountryID: '',
+      });
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Signup failed.');
+    } finally {
+      setLoading(false);
     }
-
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
-      return;
-    }
-
-    // Simulate signup
-    const mockUser = {
-      id: '1',
-      email: formData.email,
-      name: formData.name,
-    };
-
-    dispatch({ type: 'SET_USER', payload: mockUser });
-    toast.success('Account created successfully!');
-    navigate('/');
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full space-y-8"
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-10 mt-10 mb-10 rounded-2xl shadow-2xl w-full max-w-lg space-y-6 border border-gray-100"
       >
+        <h2 className="text-3xl font-extrabold mb-2 text-center text-indigo-700 tracking-tight">Create your account</h2>
+        <p className="text-center text-gray-500 mb-4">Sign up to get started with Hellomem</p>
+        {success && (
+          <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-2 rounded text-center text-sm">
+            {success}
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded text-center text-sm">
+            {error}
+          </div>
+        )}
+        <div className="flex gap-4">
+          <div className="w-1/2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <input
+              name="FirstName"
+              value={form.FirstName}
+              onChange={handleChange}
+              required
+              placeholder="First Name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+            />
+          </div>
+          <div className="w-1/2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <input
+              name="LastName"
+              value={form.LastName}
+              onChange={handleChange}
+              required
+              placeholder="Last Name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+            />
+          </div>
+        </div>
         <div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
-            Create Your Account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Join thousands of happy customers
-          </p>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+          <input
+            name="EmailAddress"
+            value={form.EmailAddress}
+            onChange={handleChange}
+            required
+            type="email"
+            placeholder="Email Address"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+          />
         </div>
-
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Full Name
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Enter your full name"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email Address
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Enter your email address"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Create a password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Confirm Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Confirm your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                required
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                I agree to the{' '}
-                <Link to="/terms" className="text-primary-600 hover:text-primary-500">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link to="/privacy" className="text-primary-600 hover:text-primary-500">
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-
-            <div>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
-              >
-                Create Account
-              </motion.button>
-            </div>
-
-            <div className="text-center">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Already have an account?{' '}
-                <Link
-                  to="/login"
-                  className="font-medium text-primary-600 hover:text-primary-500"
-                >
-                  Sign in here
-                </Link>
-              </span>
-            </div>
-          </form>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input
+            name="Password"
+            value={form.Password}
+            onChange={handleChange}
+            required
+            type="password"
+            placeholder="Password"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+          />
         </div>
-      </motion.div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+          <input
+            name="MobileNo"
+            value={form.MobileNo}
+            onChange={handleChange}
+            required
+            placeholder="Mobile Number"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Address</label>
+          <input
+            name="ShippingAddress"
+            value={form.AddressLineOne || ''}
+            onChange={handleChange}
+            required
+            placeholder="Shipping Address"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+          />
+        </div>
+        <div className="flex gap-4">
+          <div className="w-1/2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+            <select
+              name="CountryID"
+              value={form.CountryID}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+              title="Select Country"
+            >
+              <option value="">Select Country</option>
+              {countries.length === 0 ? (
+                <option value="" disabled>No countries found</option>
+              ) : (
+                countries.map((c) => (
+                  <option key={c.CountryID} value={c.CountryID}>{c.CountryName}</option>
+                ))
+              )}
+            </select>
+          </div>
+          <div className="w-1/2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
+            <select
+              name="StateProvinceId"
+              value={form.StateProvinceId}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+              title="Select State/Province"
+            >
+              <option value="">Select State/Province</option>
+              {states.length === 0 ? (
+                <option value="" disabled>No states found</option>
+              ) : (
+                states.map((s) => (
+                  <option key={s.StateProvinceID} value={s.StateProvinceID}>{s.StateName}</option>
+                ))
+              )}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">City ID (optional)</label>
+          <input
+            name="CityId"
+            value={form.CityId}
+            onChange={handleChange}
+            placeholder="City ID (optional)"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+          <input
+            name="PostalCode"
+            value={form.PostalCode}
+            onChange={handleChange}
+            required
+            placeholder="Postal Code"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-3 rounded-lg font-semibold text-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors disabled:opacity-60"
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+              Signing Up...
+            </span>
+          ) : (
+            'Sign Up'
+          )}
+        </button>
+        <div className="text-center text-sm text-gray-500 mt-2">
+          Already have an account?{' '}
+          <a href="/auth/login" className="text-indigo-600 hover:underline font-medium">
+            Login
+          </a>
+        </div>
+      </form>
     </div>
   );
 };
 
-export default SignUp;
+export default Signup;

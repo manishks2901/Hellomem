@@ -8,18 +8,6 @@ import ProductCard from "../components/common/ProductCard";
 
 import { Category, GET_ALL_PRODUCTS, GET_CATEGORY_LIST, Product } from "../services/apiConfig";
 
-
-// type ProductData = {
-//   ProductId: number;
-//   ProductName: string;
-//   CategoryID: number;
-//   CategoryName: string;
-//   Price: number;
-//   Rating: number;
-//   CreatedOn: string;
-//   [key: string]: any;
-// };
-
 const Products: React.FC = () => {
   const { state, dispatch } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();

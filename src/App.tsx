@@ -16,6 +16,7 @@ import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import Dashboard from './pages/Dashboard';
 import BottomNav from './components/layout/BottomNav';
+import SignUp from './pages/auth/SignUp';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
               <Route 
                 path="/cart" 
                 element={

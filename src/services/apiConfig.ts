@@ -1,78 +1,75 @@
 import axios from "axios";
 
 import Config from "../../config";
-const BASE_URL_DYNAMIC = `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}`
+const BASE_URL_DYNAMIC = `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}`;
 export interface ProductImage {
   AttachmentName: string;
   AttachmentURL: string;
   ProductID: number;
 }
+export type Campaign = {
+  CampaignId: number;
+  DiscountTitle: string;
+  MainTitle: string;
+  Body: string;
+  IsActive: boolean;
+  DisplayStartDate: string; // ISO date string like "2022-08-08T00:00:00"
+  DisplayEndDate: string;   // ISO date string
+  CoverPictureUrl: string;
+};
 
-export interface Product {
-  TotalRecords: number;
-  ProductImagesJson: ProductImage[];
-  ProductColorsJson: any; // Replace `any` with actual structure if known
-  ProductSizesJson: any;
-  ProductTagsJson: any;
-  ProductShipMethodsJson: any;
-  Rating: number;
-  TotalReviews: number | null;
-  Quantity: number;
-  DiscountId: number | null;
-  DiscountedPrice: number | null;
-  OrderItemDiscount: number | null;
-  ItemSubTotal: number | null;
-  IsDiscountCalculated: boolean | null;
-  CouponCode: string | null;
-  VendorName: string | null;
-  ManufacturerName: string | null;
-  CategoryID: number;
-  ColorId: number | null;
-  SizeId: number | null;
-  CategoryName: string;
-  DiscEndDate: string | null;
-  ProductAllSelectedAttributes: string | null;
+export type color = {
+  ColorID: number;
+  ColorName: string;
+  HexCode: string;
+};
+export type Product = {
   ProductId: number;
   ProductName: string;
-  ShortDescription: string | null;
-  FullDescription: string | null;
-  VendorId: number;
-  ManufacturerId: number | null;
-  MetaTitle: string | null;
-  MetaKeywords: string | null;
-  MetaDescription: string | null;
+  ShortDescription: string;
+  FullDescription: string;
   Price: number;
-  OldPrice: number | null;
-  IsTaxExempt: boolean | null;
-  IsShippingFree: boolean | null;
-  EstimatedShippingDays: number | null;
-  ShippingCharges: number | null;
-  ShowOnHomePage: boolean | null;
-  AllowCustomerReviews: boolean | null;
-  ProductViewCount: number | null;
-  ProductSalesCount: number | null;
-  IsReturnAble: boolean | null;
-  IsDigitalProduct: boolean | null;
-  IsDiscountAllowed: boolean;
-  SellStartDatetimeUtc: string | null;
-  SellEndDatetimeUtc: string | null;
-  Sku: string | null;
-  CreatedOn: string;
-  CreatedBy: string | null;
-  ModifiedOn: string | null;
-  ModifiedBy: string | null;
-  WarehouseId: number | null;
-  InventoryMethodId: number | null;
   StockQuantity: number;
-  IsBoundToStockQuantity: boolean | null;
-  DisplayStockQuantity: number | null;
-  OrderMinimumQuantity: number | null;
-  OrderMaximumQuantity: number | null;
-  MarkAsNew: boolean | null;
-  DisplaySeqNo: number | null;
-  IsActive: boolean;
-}
-
+  IsBoundToStockQuantity: boolean;
+  DisplayStockQuantity: boolean;
+  MetaTitle: string;
+  MetaKeywords: string;
+  MetaDescription: string;
+  VendorName: string;
+  Rating: number;
+  TotalReviews: number;
+  IsShippingFree: boolean;
+  ManufacturerName: string;
+  IsReturnAble: boolean;
+  MarkAsNew: boolean;
+  OrderMaximumQuantity: number;
+  OrderMinimumQuantity: number;
+  EstimatedShippingDays: number;
+  IsDiscountAllowed: boolean;
+  CategoryID?: number; // <-- Add this line for category filtering
+  ProductImagesJson: {
+    AttachmentID: number;
+    AttachmentName: string;
+    AttachmentURL: string;
+    ProductID: number;
+    ColorID: number;
+  }[];
+  ProductColorsJson: color[];
+  ProductTagsJson: {
+    TagID: number;
+    TagName: string;
+  }[];
+  ProductShipMethodsJson: {
+    ShippingMethodID: number;
+    ShippingMethodName: string;
+  }[];
+  // Extra field for selected color
+  SelectedColor?: {
+    ColorID: number;
+    ColorName: string;
+    HexCode: string;
+  };
+};
 
 export interface LocalizationData {
   langId: number;
@@ -113,6 +110,18 @@ export interface Size {
   ModifiedBy?: number;
   LocalizationJsonData: LocalizationData[];
 }
+export type CountryList = {
+  TotalRecords: number;
+  CountryID: number;
+  CountryName: string;
+  IsActive: boolean;
+  DisplaySeqNo: number;
+  MetaTitle: string;
+  MetaKeywords: string;
+  MetaDescription: string;
+  CreatedOn: string; // or Date if you parse it
+  CreatedBy: number;
+};
 
 export interface LocalizationData {
   langId: number;
@@ -128,6 +137,33 @@ export interface PopularCategory {
   LocalizationJsonData: LocalizationData[];
   TotalProducts: number;
 }
+export type UserData = {
+  UserID: number;
+  FirstName: string;
+  LastName: string;
+  EmailAddress: string;
+  PhoneNo: string;
+  MobileNo: string;
+  CountryID: number;
+  CountryName: string;
+  AddressID: number;
+  AddressLineOne: string;
+  PostalCode: string;
+  StateProvinceID: number;
+  CityID: number;
+  CityName: string;
+  StateName: string;
+  ResponseMsg: string;
+};
+export type LoginResponse = {
+  statusCode: number;
+  statusMessage: string;
+  message: string | null;
+  data: UserData;
+  isAuthorized: boolean;
+  token: string;
+  errorMessage: string;
+};
 
 export interface GetPopularCategoriesResponse {
   statusCode: number;
@@ -159,127 +195,226 @@ export interface Banner {
   BannerImgUrl: string;
 }
 
-
-
-
+export type StateProvince = {
+  StateProvinceID: number;
+  StateName: string;
+};
 
 const data_GET_ALL_PRODUCTS = JSON.stringify({
-  "requestParameters": {
-    "SearchTerm": null,
-    "SizeID": "",
-    "ColorID": null,
-    "CategoryID": "0",
-    "TagID": "",
-    "ManufacturerID": "",
-    "MinPrice": null,
-    "MaxPrice": null,
-    "Rating": null,
-    "OrderByColumnName": "",
-    "PageNo": 1,
-    "PageSize": 100,
-    "recordValueJson": "[]"
-  }
+  requestParameters: {
+    SearchTerm: null,
+    SizeID: "",
+    ColorID: null,
+    CategoryID: "0",
+    TagID: "",
+    ManufacturerID: "",
+    MinPrice: null,
+    MaxPrice: null,
+    Rating: null,
+    OrderByColumnName: "",
+    PageNo: 1,
+    PageSize: 100,
+    recordValueJson: "[]",
+  },
 });
 const config_GET_ALL_PRODUCTS = {
-  method: 'post',
+  method: "post",
   maxBodyLength: Infinity,
-  url: `${BASE_URL_DYNAMIC}${Config.END_POINT_NAMES.GET_ALL_PRODUCTS}`,
-  headers: { 
-    'Content-Type': 'application/json'
+  url: `${BASE_URL_DYNAMIC}${Config.END_POINT_NAMES.GET_All_PRODUCTS}`,
+  headers: {
+    "Content-Type": "application/json",
   },
-  data : data_GET_ALL_PRODUCTS
+  data: data_GET_ALL_PRODUCTS,
 };
 
 export const GET_ALL_PRODUCTS = async (): Promise<Product[]> => {
-  const response = await axios.request<{ data: string }>(config_GET_ALL_PRODUCTS);
+  const response = await axios.request<{ data: string }>(
+    config_GET_ALL_PRODUCTS
+  );
   return JSON.parse(response.data?.data || "[]");
-}
+};
 const data_GET_CATEGORY_LIST = JSON.stringify({
-  "requestParameters": {
-    "PageNo": 1,
-    "PageSize": 100,
-    "recordValueJson": "[]"
-  }
+  requestParameters: {
+    PageNo: 1,
+    PageSize: 100,
+    recordValueJson: "[]",
+  },
 });
 
 const config_GET_ALL_CATEGORY = {
-  method: 'post',
+  method: "post",
   maxBodyLength: Infinity,
   url: `${BASE_URL_DYNAMIC}${Config.END_POINT_NAMES.GET_CATEGORIES_LIST}`,
-  headers: { 
-    'Content-Type': 'application/json'
+  headers: {
+    "Content-Type": "application/json",
   },
-  data : data_GET_CATEGORY_LIST
+  data: data_GET_CATEGORY_LIST,
 };
 
-export const GET_CATEGORY_LIST = async():Promise<Category[]> =>{
-  const response = await axios.request<{data:string}>(config_GET_ALL_CATEGORY);
+export const GET_CATEGORY_LIST = async (): Promise<Category[]> => {
+  const response = await axios.request<{ data: string }>(
+    config_GET_ALL_CATEGORY
+  );
   return JSON.parse(response.data?.data || "[]");
-}
+};
 const data_POPULAR_CATEGORY = JSON.stringify({
-  "requestParameters": {
-    "recordValueJson": "[]"
-  }
+  requestParameters: {
+    recordValueJson: "[]",
+  },
 });
 
 const config_POPULAR_CATEGORY = {
-  method: 'post',
+  method: "post",
   maxBodyLength: Infinity,
   url: `${BASE_URL_DYNAMIC}${Config.END_POINT_NAMES.GET_POPULAR_CATEGORIES}`,
-  headers: { 
-    'Content-Type': 'application/json'
+  headers: {
+    "Content-Type": "application/json",
   },
-  data : data_POPULAR_CATEGORY
+  data: data_POPULAR_CATEGORY,
 };
 
 export const POPULAR_CATEGORY = async (): Promise<PopularCategory[]> => {
-  const response = await axios.request<{ data: string }>(config_POPULAR_CATEGORY);
-  console.log(JSON.parse(response.data?.data || "[]"))
+  const response = await axios.request<{ data: string }>(
+    config_POPULAR_CATEGORY
+  );
+  console.log(JSON.parse(response.data?.data || "[]"));
   return JSON.parse(response.data?.data || "[]");
-}
+};
 
 const dataBanner = JSON.stringify({
-  "requestParameters": {
-    "recordValueJson": "[]"
-  }
+  requestParameters: {
+    recordValueJson: "[]",
+  },
 });
 
 const configBanner = {
-  method: 'post',
+  method: "post",
   maxBodyLength: Infinity,
   url: `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_HOME_SCREEN_BANNER}`,
-  headers: { 
-    'Content-Type': 'application/json'
+  headers: {
+    "Content-Type": "application/json",
   },
-  data : dataBanner
+  data: dataBanner,
+};
+
+export const GET_BANNER = async (): Promise<Banner[]> => {
+  const response = await axios.request<{ data: string }>(configBanner);
+  return JSON.parse(response.data.data);
+};
+
+const dataRecent = JSON.stringify({
+  requestParameters: {
+    PageNo: 1,
+    PageSize: 20,
+    TabName: "new products",
+    recordValueJson: "[]",
+  },
+});
+
+const configRecentData = {
+  method: "post",
+  maxBodyLength: Infinity,
+  url: `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_RECENTS_PRODUCTS_LIST}`,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  data: dataRecent,
+};
+
+export const GET_RECENTS_PRODUCTS_LIST = async (): Promise<Product[]> => {
+  const response = await axios.request<{ data: string }>(configRecentData);
+  return JSON.parse(response.data.data);
+};
+
+const data_Country_list = JSON.stringify({
+  requestParameters: {
+    recordValueJson: "[]",
+  },
+});
+
+const config_country_list = {
+  method: "post",
+  maxBodyLength: Infinity,
+  url: `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_COUNTRIES_LIST}`,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  data: data_Country_list,
+};
+
+export const GET_COUNTRIES_LIST = async (): Promise<CountryList[]> => {
+  const response = await axios.request<{ data: string }>(config_country_list);
+  return JSON.parse(response.data.data);
+};
+export const GET_STATE_LIST = async (
+  countryId: string
+): Promise<StateProvince[]> => {
+  const response = await axios.post(
+    `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_STATES_PROVINCES_LIST}`,
+    { requestParameters: { CountryId: countryId, recordValueJson: "[]" } }
+  );
+
+  return JSON.parse(response.data.data);
+};
+
+export const GET_PRODUCT_DETAIL = async (
+  productId: string
+): Promise<Product> => {
+  const response = await axios.post(
+    `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_PRODUCT_DETAIL}`,
+    { requestParameters: { ProductId: productId, recordValueJson: "[]" } },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  return JSON.parse(response.data.data);
+};
+
+export const GET_RELATED_PRODUCTS_LIST = async (
+  productId: string
+): Promise<Product[]> => {
+  const response = await axios.post(
+    `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_RELATED_PRODUCTS_LIST}`,
+    {
+      requestParameters: {
+        ProductId: productId,
+        PageNo: 1,
+        PageSize: 20,
+        recordValueJson: "[]",
+      },
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  return JSON.parse(response.data.data);
 };
 
 
-export const GET_BANNER = async ():Promise<Banner[]> => {
-  const response = await axios.request<{ data: string }>(configBanner);
-  return JSON.parse(response.data.data)
-}
-
-const dataRecent = JSON.stringify({
+const dataCampaign = JSON.stringify({
   "requestParameters": {
-    "PageNo": 1,
-    "PageSize": 20,
-    "TabName": "new products",
     "recordValueJson": "[]"
   }
 });
 
-const configRecentData = {
+
+const configCampaign = {
   method: 'post',
   maxBodyLength: Infinity,
-  url: `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_RECENTS_PRODUCTS_LIST}`,
+  url: `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_WEB_CAMPAIGN_LIST}`,
   headers: { 
     'Content-Type': 'application/json'
   },
-  data : dataRecent
+  data : dataCampaign
 };
 
-export const GET_RECENTS_PRODUCTS_LIST = async ():Promise<Product[]> => {
-  const response = await axios.request<{ data: string }>(configRecentData);
-  return JSON.parse(response.data.data)
-}
+export const GET_CAMPAIGN_LIST = async (): Promise<Campaign[]> => {
+  const response = await axios.request(configCampaign)
+  return JSON.parse(response.data.data);
+};

@@ -14,62 +14,10 @@ import { useApp } from "../contexts/AppContext";
 import { cartAPI } from "../services/api";
 import ProductCard from "../components/common/ProductCard";
 import toast from "react-hot-toast";
-import axios from "axios";
+
 import Config from "../../config";
-import { Product } from "../services/apiConfig";
+import { GET_PRODUCT_DETAIL, GET_RELATED_PRODUCTS_LIST, Product,color } from "../services/apiConfig";
 
-// export interface Product {
-//   ProductId: number;
-//   ProductName: string;
-//   ShortDescription: string;
-//   FullDescription: string;
-//   Price: number;
-//   StockQuantity: number;
-//   IsBoundToStockQuantity: boolean;
-//   DisplayStockQuantity: boolean;
-//   MetaTitle: string;
-//   MetaKeywords: string;
-//   MetaDescription: string;
-//   VendorName: string;
-//   Rating: number;
-//   TotalReviews: number;
-//   IsShippingFree: boolean;
-//   ManufacturerName: string;
-//   IsReturnAble: boolean;
-//   MarkAsNew: boolean;
-//   OrderMaximumQuantity: number;
-//   OrderMinimumQuantity: number;
-//   EstimatedShippingDays: number;
-//   IsDiscountAllowed: boolean;
-//   ProductImagesJson: ProductImage[];
-//   ProductColorsJson: ProductColor[];
-//   ProductTagsJson: ProductTag[];
-//   ProductShipMethodsJson: ProductShippingMethod[];
-// }
-
-// export interface ProductImage {
-//   AttachmentID: number;
-//   AttachmentName: string;
-//   AttachmentURL: string;
-//   ProductID: number;
-//   ColorID: number;
-// }
-
-// export interface ProductColor {
-//   ColorID: number;
-//   ColorName: string;
-//   HexCode: string;
-// }
-
-// export interface ProductTag {
-//   TagID: number;
-//   TagName: string;
-// }
-
-// export interface ProductShippingMethod {
-//   ShippingMethodID: number;
-//   ShippingMethodName: string;
-// }
 
 const Feature = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
   <div className="text-center">
@@ -106,62 +54,34 @@ const ProductDetail: React.FC = () => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const URL = Config.ADMIN_BASE_URL;
+  const [color, setColor] = useState<color[]>([]);
+  const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchProductAndRelated = async () => {
       if (!id) return;
-
-      const productPayload = JSON.stringify({
-        requestParameters: {
-          ProductId: id,
-          recordValueJson: "[]",
-        },
-      });
-
-      const relatedPayload = JSON.stringify({
-        requestParameters: {
-          ProductId: id,
-          PageNo: 1,
-          PageSize: 20,
-          recordValueJson: "[]",
-        },
-      });
-
       try {
         setIsLoading(true);
-
         const [productRes, relatedRes] = await Promise.all([
-          axios.post(
-            `${URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_PRODUCT_DETAIL}`,
-            productPayload,
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          ),
-          axios.post(
-            `${URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_RELATED_PRODUCTS_LIST}`,
-            relatedPayload,
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          ),
+          GET_PRODUCT_DETAIL(id),
+          GET_RELATED_PRODUCTS_LIST(id),
         ]);
-
         let parsedProduct: Product | undefined;
-        const rawProduct = JSON.parse(productRes.data?.data || '{}');
+        const rawProduct = productRes;
         if (Array.isArray(rawProduct)) {
           parsedProduct = rawProduct[0];
         } else {
           parsedProduct = rawProduct;
         }
         setProduct(parsedProduct);
-
-        const parsedRelated: Product[] = JSON.parse(relatedRes.data?.data || "[]");
-        setRelatedProducts(parsedRelated);
+        setRelatedProducts(relatedRes);
+        // Set color options from product
+        const colors = parsedProduct?.ProductColorsJson;
+        setColor(colors ?? []);
+        // Set default selected color if available
+        if (colors && colors.length > 0) {
+          setSelectedColor(colors[0].ColorName || undefined);
+        }
       } catch (error) {
         console.error("Error loading product data:", error);
         toast.error("Unable to load product");
@@ -170,7 +90,6 @@ const ProductDetail: React.FC = () => {
         setIsLoading(false);
       }
     };
-
     fetchProductAndRelated();
   }, [id, navigate, URL]);
 
@@ -180,12 +99,13 @@ const ProductDetail: React.FC = () => {
       navigate("/login");
       return;
     }
-
     if (!product) return;
-
+    if (color.length > 0 && !selectedColor) {
+      toast.error("Please select a color");
+      return;
+    }
     try {
       await cartAPI.add(product.ProductId, quantity);
-
       const newCartItem = {
         id: Date.now(),
         productId: product.ProductId,
@@ -194,8 +114,8 @@ const ProductDetail: React.FC = () => {
         image: images[0] || '',
         seller: product.VendorName || '',
         quantity,
+        color: selectedColor,
       };
-
       dispatch({ type: "SET_CART", payload: [...state.cart, newCartItem] });
       toast.success(`Added ${quantity} item(s) to cart!`);
     } catch {
@@ -209,7 +129,10 @@ const ProductDetail: React.FC = () => {
       navigate("/login");
       return;
     }
-
+    if (color.length > 0 && !selectedColor) {
+      toast.error("Please select a color");
+      return;
+    }
     handleAddToCart();
     navigate("/cart");
   };
@@ -277,7 +200,7 @@ const ProductDetail: React.FC = () => {
               <div className="flex space-x-2">
                 {images.map((image, index) => (
                   <button
-                    key={index}
+                    key={index+1}
                     onClick={() => setSelectedImage(index)}
                     className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${
                       safeSelectedImage === index
@@ -336,6 +259,41 @@ const ProductDetail: React.FC = () => {
                 </span>
               )}
             </div>
+
+
+            {/* Color Selection */}
+            {color.length > 0 && (
+              <div className="flex items-center space-x-4 mb-4">
+                <span className="text-gray-700 dark:text-gray-300">Color:</span>
+                <div className="flex space-x-2">
+                  {color.map((c, idx) => (
+                    <button
+                      key={
+                        c.ColorName
+                          ? `${c.ColorName}-${idx}`
+                          : c.HexCode
+                            ? `${c.HexCode}-${idx}`
+                            : `color-${idx}`
+                      }
+                      type="button"
+                      onClick={() => setSelectedColor(c.ColorName)}
+                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center focus:outline-none transition-all ${
+                        selectedColor === c.ColorName
+                          ? 'border-blue-500 ring-2 ring-blue-300'
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
+                      title={c.ColorName}
+                      style={c.HexCode ? { backgroundColor: c.HexCode } : {}}
+                    >
+                      
+                    </button>
+                  ))}
+                </div>
+                {selectedColor && (
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-300">{selectedColor}</span>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center space-x-4">
               <span className="text-gray-700 dark:text-gray-300">Quantity:</span>
@@ -406,7 +364,7 @@ const ProductDetail: React.FC = () => {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((p) => (
-                <ProductCard key={p.ProductId} product={p} />
+                <ProductCard key={p.ProductId+1} product={p} />
               ))}
             </div>
           </div>

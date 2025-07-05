@@ -3,8 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { CreditCard, MapPin, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApp } from '../contexts/AppContext';
-import { ordersAPI } from '../services/api';
+
 import toast from 'react-hot-toast';
+
+
+const paymentMethodMap: Record<string, string> = {
+  card: '6', // Credit/Debit Card
+  upi: '7',  // UPI
+  cod: '8',  // Cash on Delivery
+};
 
 const Checkout: React.FC = () => {
   const { state, dispatch } = useApp();
@@ -18,7 +25,10 @@ const Checkout: React.FC = () => {
     city: '',
     state: '',
     pincode: '',
-    paymentMethod: 'card'
+    paymentMethod: 'card',
+    orderNote: '',
+    couponCode: '',
+    paymentToken: '',
   });
 
   const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -26,9 +36,10 @@ const Checkout: React.FC = () => {
   const tax = subtotal * 0.18;
   const total = subtotal + shipping + tax;
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.pincode) {
       toast.error('Please fill in all required fields');
       return;
@@ -37,34 +48,61 @@ const Checkout: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const orderData = {
-        items: state.cart,
-        shippingAddress: {
-          name: formData.name,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          pincode: formData.pincode
-        },
-        paymentMethod: formData.paymentMethod,
-        total
+      // Build cartJsonData as required by backend
+      const cartJsonData = state.cart.map((item) => ({
+        ProductId: String(item.productId ?? item.id),
+        productSelectedAttributes: item.selectedAttributes || [], // fallback to empty array if not present
+        Quantity: item.quantity,
+        ShippingCharges: shipping, // or item.shippingCharges if available
+        DefaultImage: item.image || '',
+      }));
+
+      const payload = {
+        UserID: state.user?.id || '',
+        OrderNote: formData.orderNote,
+        cartJsonData: JSON.stringify(cartJsonData),
+        CouponCode: formData.couponCode,
+        PaymentMethod: paymentMethodMap[formData.paymentMethod] || '6',
+        paymentToken: formData.paymentToken,
+        payPalOrderConfirmJson: '{}',
+        recordValueJson: '[]',
       };
 
-      const response = await ordersAPI.create(orderData);
-      
+      const response = await fetch('http://noornashad-001-site2.etempurl.com/api/v1/common/post-order/post-customer-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ requestParameters: payload }),
+      });
+
+      if (!response.ok) throw new Error('Order failed');
+      const data = await response.json();
+
+      // Backend returns data as a stringified array, so parse it
+      let orderMsg = '';
+      if (data && typeof data.data === 'string') {
+        try {
+          const arr = JSON.parse(data.data);
+          if (Array.isArray(arr) && arr[0]?.ResponseMsg) {
+            orderMsg = arr[0].ResponseMsg;
+          }
+        } catch {}
+      }
+
       // Clear cart
       dispatch({ type: 'SET_CART', payload: [] });
-      
-      toast.success('Order placed successfully!');
-      navigate('/order-success', { state: { orderId: response.data.orderId } });
-    } catch (error) {
+
+      toast.success(orderMsg || 'Order placed successfully!');
+      navigate('/order-success');
+    } catch {
       toast.error('Failed to place order');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -83,6 +121,39 @@ const Checkout: React.FC = () => {
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Shipping Address */}
+              {/* Order Note & Coupon */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Order Note
+                    </label>
+                    <textarea
+                      name="orderNote"
+                      value={formData.orderNote}
+                      onChange={handleChange}
+                      rows={2}
+                      placeholder="Add any notes for your order (optional)"
+                      title="Order Note"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Coupon Code
+                    </label>
+                    <input
+                      type="text"
+                      name="couponCode"
+                      value={formData.couponCode}
+                      onChange={handleChange}
+                      placeholder="Enter coupon code (if any)"
+                      title="Coupon Code"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                 <div className="flex items-center mb-4">
                   <MapPin className="h-6 w-6 text-blue-500 mr-2" />
@@ -102,6 +173,8 @@ const Checkout: React.FC = () => {
                       value={formData.name}
                       onChange={handleChange}
                       required
+                      placeholder="Full Name"
+                      title="Full Name"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -116,6 +189,8 @@ const Checkout: React.FC = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
+                      placeholder="Email"
+                      title="Email"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -130,6 +205,8 @@ const Checkout: React.FC = () => {
                       value={formData.phone}
                       onChange={handleChange}
                       required
+                      placeholder="Phone Number"
+                      title="Phone Number"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -144,6 +221,8 @@ const Checkout: React.FC = () => {
                       value={formData.address}
                       onChange={handleChange}
                       required
+                      placeholder="Address"
+                      title="Address"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -158,6 +237,8 @@ const Checkout: React.FC = () => {
                       value={formData.city}
                       onChange={handleChange}
                       required
+                      placeholder="City"
+                      title="City"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -172,6 +253,8 @@ const Checkout: React.FC = () => {
                       value={formData.state}
                       onChange={handleChange}
                       required
+                      placeholder="State"
+                      title="State"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -186,6 +269,8 @@ const Checkout: React.FC = () => {
                       value={formData.pincode}
                       onChange={handleChange}
                       required
+                      placeholder="Pincode"
+                      title="Pincode"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -193,6 +278,23 @@ const Checkout: React.FC = () => {
               </div>
 
               {/* Payment Method */}
+              {/* Payment Token (for card/UPI, hidden for COD) */}
+              {(formData.paymentMethod === 'card' || formData.paymentMethod === 'upi') && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Token (for demo, enter any value)
+                  </label>
+                  <input
+                    type="text"
+                    name="paymentToken"
+                    value={formData.paymentToken}
+                    onChange={handleChange}
+                    placeholder="Enter payment token (for demo, any value)"
+                    title="Payment Token"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              )}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                 <div className="flex items-center mb-4">
                   <CreditCard className="h-6 w-6 text-blue-500 mr-2" />
