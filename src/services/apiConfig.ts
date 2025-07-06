@@ -2,6 +2,83 @@ import axios from "axios";
 
 import Config from "../../config";
 const BASE_URL_DYNAMIC = `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}`;
+
+
+export type LoginResponse = {
+  statusCode: number;
+  statusMessage: string;
+  message: string | null;
+  data: string; // JSON string — should be parsed separately into UserData[]
+  isAuthorized: boolean;
+  token: string;
+  errorMessage: string;
+};
+
+export type UserData = {
+  UserID: number;
+  FirstName: string;
+  LastName: string;
+  EmailAddress: string;
+  PhoneNo: string;
+  MobileNo: string;
+  CountryID: number;
+  CountryName: string;
+  AddressID: number;
+  AddressLineOne: string;
+  PostalCode: string;
+  StateProvinceID: number;
+  CityID: number;
+  CityName: string;
+  StateName: string;
+  ResponseMsg: string;
+};
+
+// export type UserAddressResponse = {
+//   UserID: number;
+//   FirstName: string;
+//   LastName: string;
+//   EmailAddress: string;
+//   PhoneNo: string;
+//   MobileNo: string;
+//   CountryID: number;
+//   CountryName: string;
+//   AddressID: number;
+//   AddressLineOne: string;
+//   PostalCode: string;
+//   StateProvinceID: number;
+//   CityID: number;
+//   CityName: string;
+//   StateName: string;
+//   ResponseMsg: string;
+// };
+
+export type OrderStatus = 'Active' | 'In Progress' | 'Completed';
+
+export type Order = {
+  OrderId: number;
+  OrderNumber: string;
+  OrderDateUTC: string;
+  OrderTotal: number;
+  LatestStatusName: OrderStatus;
+  TotalItems: number;
+};
+
+export type OrderItem = {
+  OrderItemID: number;
+  OrderID: number;
+  ProductID: number;
+  Quantity: number;
+  Price: number;
+  ProductName: string;
+  IsDigitalProduct: boolean;
+  OrderItemTotal: number;
+  DefaultImageUrl: string;
+  ShippingStatusID: number;
+  LatestStatusID: number;
+};
+
+
+
 export interface ProductImage {
   AttachmentName: string;
   AttachmentURL: string;
@@ -137,33 +214,7 @@ export interface PopularCategory {
   LocalizationJsonData: LocalizationData[];
   TotalProducts: number;
 }
-export type UserData = {
-  UserID: number;
-  FirstName: string;
-  LastName: string;
-  EmailAddress: string;
-  PhoneNo: string;
-  MobileNo: string;
-  CountryID: number;
-  CountryName: string;
-  AddressID: number;
-  AddressLineOne: string;
-  PostalCode: string;
-  StateProvinceID: number;
-  CityID: number;
-  CityName: string;
-  StateName: string;
-  ResponseMsg: string;
-};
-export type LoginResponse = {
-  statusCode: number;
-  statusMessage: string;
-  message: string | null;
-  data: UserData;
-  isAuthorized: boolean;
-  token: string;
-  errorMessage: string;
-};
+
 
 export interface GetPopularCategoriesResponse {
   statusCode: number;
@@ -418,3 +469,63 @@ export const GET_CAMPAIGN_LIST = async (): Promise<Campaign[]> => {
   const response = await axios.request(configCampaign)
   return JSON.parse(response.data.data);
 };
+
+
+
+export const GET_URER_DETAIL = async(email: string, password: string): Promise<LoginResponse> => {
+  // Example usage of password parameter (replace with actual implementation)
+  // Here, both email and password are sent in the request body
+  const response = await axios.post(
+    `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_USER_LOGIN}`,
+    { requestParameters: { Email: email, Password: password, recordValueJson: "[]" } },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  console.log(response.data)
+  return response.data;
+};
+
+
+export const GET_CUSTOME_ORDER_HISTORY_DETAIL_MASTER = async (userid: number): Promise<Order[]> => {
+  const response = await axios.post(
+    `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_CUSTOMER_ORDER_HISTORY_MASTER}`,
+    {
+      requestParameters: {
+        userId: userid,
+        recordValueJson: [],
+      },
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+
+  return JSON.parse(response.data.data) 
+};
+export const GET_CUSTOME_ORDER_HISTORY_DETAIL = async (orderid: number): Promise<OrderItem> => {
+  const response = await axios.post(
+    `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_CUSTOME_ORDER_HISTORY_DETAIL}`,
+    {
+      requestParameters: {
+        OrderId: orderid,
+        recordValueJson: [],
+      },
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+
+  return JSON.parse(response.data.data)
+};
+
+

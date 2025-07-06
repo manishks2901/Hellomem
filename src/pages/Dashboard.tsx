@@ -2,19 +2,71 @@ import React, { useEffect, useState } from 'react';
 import { Package, User, Clock, CheckCircle, Truck, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApp } from '../contexts/AppContext';
-import { ordersAPI } from '../services/api';
+import { GET_CUSTOME_ORDER_HISTORY_DETAIL_MASTER, GET_CUSTOME_ORDER_HISTORY_DETAIL, Order, OrderItem } from '../services/apiConfig';
+import Config from '../../config';
+type User = {
+  id: number;
+  email: string;
+  name: string;
+  phone: string;
+};
+
 
 const Dashboard: React.FC = () => {
   const { state } = useApp();
   const [activeTab, setActiveTab] = useState('orders');
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[] | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const handleOrderDropdown = async (orderId: number) => {
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null);
+      setOrderItems(null);
+      return;
+    }
+    setExpandedOrderId(orderId);
+    setDetailLoading(true);
+    try {
+      const detail = await GET_CUSTOME_ORDER_HISTORY_DETAIL(orderId);
+      // If detail is an array, use as is; if object, wrap in array
+      if (Array.isArray(detail)) {
+        setOrderItems(detail);
+      } else if (detail) {
+        setOrderItems([detail]);
+      } else {
+        setOrderItems([]);
+      }
+    } catch{
+      setOrderItems([]);
+    } finally {
+      // console.log(JON)
+      setDetailLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await ordersAPI.getAll();
-        setOrders(response.data);
+        const user = await localStorage.getItem("user");
+        let userObj: User | null = null;
+        if (user) {
+          userObj = JSON.parse(user);
+        }
+        // Try both UserId and id for compatibility
+        const userId = userObj ? userObj.id : null;
+        // console.log(userId)
+        if (!userId) {
+          setOrders([]);
+          setIsLoading(false);
+          return;
+        }
+        const response = await GET_CUSTOME_ORDER_HISTORY_DETAIL_MASTER(userId);
+        console.log('Orders ',Array.isArray(response) && response.length>0)
+        setOrders(response);
+        // Debug log for troubleshooting
+        // console.log('Fetched orders for userId:', userId, response);
       } catch (error) {
         console.error('Failed to fetch orders:', error);
       } finally {
@@ -116,9 +168,9 @@ const Dashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {orders.map((order: any, index) => (
+                  {Array.isArray(orders) && orders.length > 0 && orders.map((order: Order, index) => (
                     <motion.div
-                      key={order.id}
+                      key={order.OrderId}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
@@ -127,53 +179,53 @@ const Dashboard: React.FC = () => {
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="font-semibold text-gray-900 dark:text-white">
-                            Order #{order.id}
+                            Order #{order.OrderId}
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(order.orderDate).toLocaleDateString()}
+                            {new Date(order.OrderDateUTC).toLocaleDateString()}
                           </p>
                         </div>
-                        
                         <div className="flex items-center space-x-2">
-                          {getStatusIcon(order.status)}
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                            {order.status}
+                          {getStatusIcon(order.LatestStatusName)}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.LatestStatusName)}`}>
+                            {order.LatestStatusName}
                           </span>
+                          <button
+                            className="ml-4 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 rounded text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-800 transition"
+                            onClick={() => handleOrderDropdown(order.OrderId)}
+                          >
+                            {expandedOrderId === order.OrderId ? 'Hide Details' : 'View Details'}
+                          </button>
                         </div>
                       </div>
-
-                      <div className="space-y-2 mb-4">
-                        {order.items.map((item: any) => (
-                          <div key={item.id} className="flex items-center space-x-3">
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-12 h-12 object-cover rounded"
-                            />
-                            <div className="flex-1">
-                              <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                                {item.name}
-                              </h4>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Qty: {item.quantity} × ₹{item.price.toLocaleString()}
-                              </p>
+                      {expandedOrderId === order.OrderId && (
+                        <div className="mt-4">
+                          {detailLoading ? (
+                            <div className="text-center py-4 text-blue-500">Loading details...</div>
+                          ) : orderItems && orderItems.length > 0 ? (
+                            <div className="bg-gray-50 dark:bg-gray-900/40 rounded p-4">
+                              <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">Order Items</h4>
+                              <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                                {orderItems.map((item) => (
+                                  <li key={item.OrderItemID} className="py-2 flex items-center">
+                                    <img src={`${Config.ADMIN_BASE_URL}${item.DefaultImageUrl}`} alt={item.ProductName} className="w-10 h-10 object-cover rounded mr-3" />
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-900 dark:text-white">{item.ProductName}</div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">Qty: {item.Quantity} × ₹{item.Price.toLocaleString()}</div>
+                                    </div>
+                                    <div className="text-sm font-bold text-gray-900 dark:text-white">₹{(item.Price * item.Quantity).toLocaleString()}</div>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="mt-4 text-right">
+                                <span className="font-bold text-lg text-gray-900 dark:text-white">Total: ₹{orderItems.reduce((sum, item) => sum + (item.Price * item.Quantity), 0).toLocaleString()}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          <p>Delivered to: {order.shippingAddress.name}</p>
-                          <p>{order.shippingAddress.address}, {order.shippingAddress.city}</p>
+                          ) : (
+                            <div className="text-center py-4 text-red-500">No items found.</div>
+                          )}
                         </div>
-                        
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
-                            ₹{order.total.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>

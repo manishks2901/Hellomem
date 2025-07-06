@@ -65,6 +65,14 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              {/* <Route 
+                path="/dashboard" 
+                element={
+
+                    <Dashboard />
+
+                } 
+              /> */}
             </Routes>
           </main>
           <Footer />

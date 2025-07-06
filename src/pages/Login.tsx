@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApp } from '../contexts/AppContext';
-import { authAPI } from '../services/api';
+import { GET_URER_DETAIL, UserData } from '../services/apiConfig';
 import toast from 'react-hot-toast';
 
 const Login: React.FC = () => {
@@ -13,38 +13,45 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: 'demo@user.com',
-    password: 'demo123',
+    email: 'sudeshKumar19@noorshop.com',
+    password: '123456',
   });
 
   const from = location.state?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.email || !formData.password) {
       toast.error('Please fill in all fields');
       return;
     }
-
     setIsLoading(true);
-
     try {
-      const response = await authAPI.login(formData);
-      const { token, user } = response.data;
+      const res = await GET_URER_DETAIL(formData.email, formData.password);
+      // console.log("LOGIN RESPONSE", res.data);
+      const response = JSON.parse(res.data)
+      console.log("LOGIN RESPONSE",response[0])
+      if (res.statusCode === 200) {
+        const user = {
+          id: response[0].UserID,
+          email: response[0].EmailAddress,
+          name: response[0].FirstName + ' ' + response[0].LastName,
+          phone: response[0].PhoneNo || response[0].MobileNo || '',
+        };
 
-      // Store auth data
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('user', JSON.stringify(user));
-
-      // Update app state
-      dispatch({ type: 'SET_USER', payload: user });
-      dispatch({ type: 'SET_AUTHENTICATED', payload: true });
-
-      toast.success('Login successful!');
-      navigate(from, { replace: true });
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login failed');
+        console.log("USER", user.email);
+        localStorage.setItem('authToken', res.token);
+        localStorage.setItem('user', JSON.stringify(user));
+        dispatch({ type: 'SET_USER', payload: user });
+        dispatch({ type: 'SET_AUTHENTICATED', payload: true });
+        toast.success('Login successful!');
+        navigate(from, { replace: true });
+      } else {
+        toast.error(String(res.errorMessage || res.statusCode || 'Login failed'));
+      }
+    } catch (error) {
+      const err = error as { message?: string };
+      toast.error(err?.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
