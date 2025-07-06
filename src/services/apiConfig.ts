@@ -279,9 +279,10 @@ const config_GET_ALL_PRODUCTS = {
 };
 
 export const GET_ALL_PRODUCTS = async (): Promise<Product[]> => {
-  const response = await axios.request<{ data: string }>(
-    config_GET_ALL_PRODUCTS
-  );
+  const response = await axios.request<{ data: string }>({
+    ...config_GET_ALL_PRODUCTS,
+    withCredentials: true,
+  });
   return JSON.parse(response.data?.data || "[]");
 };
 const data_GET_CATEGORY_LIST = JSON.stringify({
@@ -303,9 +304,10 @@ const config_GET_ALL_CATEGORY = {
 };
 
 export const GET_CATEGORY_LIST = async (): Promise<Category[]> => {
-  const response = await axios.request<{ data: string }>(
-    config_GET_ALL_CATEGORY
-  );
+  const response = await axios.request<{ data: string }>({
+    ...config_GET_ALL_CATEGORY,
+    withCredentials: true,
+  });
   return JSON.parse(response.data?.data || "[]");
 };
 const data_POPULAR_CATEGORY = JSON.stringify({
@@ -325,9 +327,10 @@ const config_POPULAR_CATEGORY = {
 };
 
 export const POPULAR_CATEGORY = async (): Promise<PopularCategory[]> => {
-  const response = await axios.request<{ data: string }>(
-    config_POPULAR_CATEGORY
-  );
+  const response = await axios.request<{ data: string }>({
+    ...config_POPULAR_CATEGORY,
+    withCredentials: true,
+  });
   console.log(JSON.parse(response.data?.data || "[]"));
   return JSON.parse(response.data?.data || "[]");
 };
@@ -349,7 +352,10 @@ const configBanner = {
 };
 
 export const GET_BANNER = async (): Promise<Banner[]> => {
-  const response = await axios.request<{ data: string }>(configBanner);
+  const response = await axios.request<{ data: string }>({
+    ...configBanner,
+    withCredentials: true,
+  });
   return JSON.parse(response.data.data);
 };
 
@@ -373,7 +379,10 @@ const configRecentData = {
 };
 
 export const GET_RECENTS_PRODUCTS_LIST = async (): Promise<Product[]> => {
-  const response = await axios.request<{ data: string }>(configRecentData);
+  const response = await axios.request<{ data: string }>({
+    ...configRecentData,
+    withCredentials: true,
+  });
   return JSON.parse(response.data.data);
 };
 
@@ -394,7 +403,10 @@ const config_country_list = {
 };
 
 export const GET_COUNTRIES_LIST = async (): Promise<CountryList[]> => {
-  const response = await axios.request<{ data: string }>(config_country_list);
+  const response = await axios.request<{ data: string }>({
+    ...config_country_list,
+    withCredentials: true,
+  });
   return JSON.parse(response.data.data);
 };
 export const GET_STATE_LIST = async (
@@ -402,9 +414,9 @@ export const GET_STATE_LIST = async (
 ): Promise<StateProvince[]> => {
   const response = await axios.post(
     `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_STATES_PROVINCES_LIST}`,
-    { requestParameters: { CountryId: countryId, recordValueJson: "[]" } }
+    { requestParameters: { CountryId: countryId, recordValueJson: "[]" } },
+    { withCredentials: true }
   );
-
   return JSON.parse(response.data.data);
 };
 
@@ -418,9 +430,9 @@ export const GET_PRODUCT_DETAIL = async (
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true,
     }
   );
-
   return JSON.parse(response.data.data);
 };
 
@@ -441,9 +453,9 @@ export const GET_RELATED_PRODUCTS_LIST = async (
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true,
     }
   );
-
   return JSON.parse(response.data.data);
 };
 
@@ -466,15 +478,13 @@ const configCampaign = {
 };
 
 export const GET_CAMPAIGN_LIST = async (): Promise<Campaign[]> => {
-  const response = await axios.request(configCampaign)
+  const response = await axios.request({ ...configCampaign, withCredentials: true })
   return JSON.parse(response.data.data);
 };
 
 
 
 export const GET_URER_DETAIL = async(email: string, password: string): Promise<LoginResponse> => {
-  // Example usage of password parameter (replace with actual implementation)
-  // Here, both email and password are sent in the request body
   const response = await axios.post(
     `${Config.ADMIN_BASE_URL}${Config.DYNAMIC_METHOD_SUB_URL}${Config.END_POINT_NAMES.GET_USER_LOGIN}`,
     { requestParameters: { Email: email, Password: password, recordValueJson: "[]" } },
@@ -482,6 +492,7 @@ export const GET_URER_DETAIL = async(email: string, password: string): Promise<L
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true,
     }
   );
   console.log(response.data)
@@ -502,10 +513,9 @@ export const GET_CUSTOME_ORDER_HISTORY_DETAIL_MASTER = async (userid: number): P
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true,
     }
   );
-
-
   return JSON.parse(response.data.data) 
 };
 export const GET_CUSTOME_ORDER_HISTORY_DETAIL = async (orderid: number): Promise<OrderItem> => {
@@ -521,10 +531,9 @@ export const GET_CUSTOME_ORDER_HISTORY_DETAIL = async (orderid: number): Promise
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true,
     }
   );
-
-
   return JSON.parse(response.data.data)
 };
 
