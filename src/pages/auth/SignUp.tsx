@@ -154,8 +154,8 @@ const Signup: React.FC = () => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Address</label>
           <input
-            name="ShippingAddress"
-            value={form.AddressLineOne || ''}
+            name="AddressLineOne"
+            value={form.AddressLineOne}
             onChange={handleChange}
             required
             placeholder="Shipping Address"
