@@ -1,8 +1,8 @@
 const Config = {
     // ADMIN_BASE_URL: 'https://localhost:7149/',
     // ADMIN_BASE_URL: 'http://noornashad-001-site2.etempurl.com/',
-    // ADMIN_BASE_URL: 'https://admin.hellomem.com/',
-    ADMIN_BASE_URL: '/api',
+    ADMIN_BASE_URL: 'https://admin.hellomem.com/',
+    // ADMIN_BASE_URL: '/api',
     DYNAMIC_METHOD_SUB_URL: 'api/v1/dynamic/dataoperation/',
     COMMON_CONTROLLER_SUB_URL: 'api/v1/common/',
     SITE_TTILE: 'Hello Mem',
